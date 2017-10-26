@@ -28,7 +28,7 @@ func resourceCalicoBgpPeer() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"peerIP": &schema.Schema{
+			"peer_ip": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -38,7 +38,7 @@ func resourceCalicoBgpPeer() *schema.Resource {
 				ForceNew: false,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"asNumber": &schema.Schema{
+						"as_number": &schema.Schema{
 							Type:     schema.TypeString,
 							Required: true,
 						},
@@ -55,7 +55,7 @@ func dToBgpPeerMetadata(d *schema.ResourceData) (api.BGPPeerMetadata, error) {
 		Node: d.Get("node").(string),
 	}
 
-	pIP := d.Get("peerIP").(string)
+	pIP := d.Get("peer_ip").(string)
 	peerIP := caliconet.IP{net.ParseIP(pIP)}
 	metadata.PeerIP = peerIP
 
@@ -67,7 +67,7 @@ func dToBgpPeerMetadata(d *schema.ResourceData) (api.BGPPeerMetadata, error) {
 func dToBgpPeerSpec(d *schema.ResourceData) (api.BGPPeerSpec, error) {
 	spec := api.BGPPeerSpec{}
 
-	asNumber := d.Get("spec.0.asNumber").(string)
+	asNumber := d.Get("spec.0.as_number").(string)
 	if num, err := numorstring.ASNumberFromString(asNumber); err != nil {
 		return spec, err
 	} else {
@@ -83,7 +83,7 @@ func setSchemaFieldsForBGPPeerSpec(bgpPeer *api.BGPPeer, d *schema.ResourceData)
 
 	specMap := make(map[string]interface{})
 
-	specMap["asNumber"] = bgpPeer.Spec.ASNumber.String()
+	specMap["as_number"] = bgpPeer.Spec.ASNumber.String()
 	specArray[0] = specMap
 
 	d.Set("spec", specArray)
@@ -121,7 +121,7 @@ func resourceCalicoBgpPeerRead(d *schema.ResourceData, meta interface{}) error {
 
 	bgpPeers := calicoClient.BGPPeers()
 
-	ip := d.Get("peerIP").(string)
+	ip := d.Get("peer_ip").(string)
 	resourcePeerIP := caliconet.IP{net.ParseIP(ip)}
 
 	resourceNode := d.Get("node").(string)
@@ -141,7 +141,7 @@ func resourceCalicoBgpPeerRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	compoundID := d.Get("scope").(string) + "_" + d.Get("node").(string) + "_" + d.Get("peerIP").(string)
+	compoundID := d.Get("scope").(string) + "_" + d.Get("node").(string) + "_" + d.Get("peer_ip").(string)
 	d.SetId(compoundID)
 
 	setSchemaFieldsForBGPPeerSpec(bgpPeer, d)
@@ -189,7 +189,7 @@ func resourceCalicoBgpPeerDelete(d *schema.ResourceData, meta interface{}) error
 
 	bgpPeers := calicoClient.BGPPeers()
 
-	ip := d.Get("peerIP").(string)
+	ip := d.Get("peer_ip").(string)
 	resourcePeerIP := caliconet.IP{net.ParseIP(ip)}
 
 	resourceNode := d.Get("node").(string)

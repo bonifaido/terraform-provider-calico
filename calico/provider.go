@@ -14,94 +14,89 @@ import (
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"backend_type": &schema.Schema{
+			"datastore_type": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "etcdv2",
-				Description: "Either etcdv2 or kubernetes",
+				Default:     schema.EnvDefaultFunc("CALICO_DATASTORE_TYPE", "etcdv2"),
+				Description: "Indicates the datastore to use (required for Kubernetes as the default is etcdv2)",
+				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+					datastoreType := v.(string)
+					if datastoreType != "etcdv2" && datastoreType != "kubernetes" {
+						errors = append(errors, fmt.Errorf("%q: %s", k, "etcdv2 and kubernetes are the only supported values"))
+					}
+					return
+				},
 			},
-			"backend_etcd_scheme": &schema.Schema{
+			"etcd_endpoints": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("CALICO_BACKEND_ETCD_SCHEME", "http"),
-				Description: "default: http",
-			},
-			"backend_etcd_authority": &schema.Schema{
-				Type:        schema.TypeString,
-				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("CALICO_BACKEND_ETCD_AUTHORITY", "127.0.0.1:2379"),
-				Description: "default: 127.0.0.1:2379",
-			},
-			"backend_etcd_endpoints": &schema.Schema{
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_BACKEND_ETCD_ENDPOINTS", ""),
 				Description: "multiple etcd endpoints separated by comma",
 			},
-			"backend_etcd_username": &schema.Schema{
+			"etcd_username": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_BACKEND_ETCD_USERNAME", ""),
 				Description: "Etcd username",
 			},
-			"backend_etcd_password": &schema.Schema{
+			"etcd_password": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_BACKEND_ETCD_PASSWORD", ""),
 				Description: "Etcd password",
 			},
-			"backend_etcd_keyfile": &schema.Schema{
+			"etcd_key_file": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_BACKEND_ETCD_ETCD_KEY_FILE", ""),
 				Description: "File location keyfile",
 			},
-			"backend_etcd_certfile": &schema.Schema{
+			"etcd_cert_file": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_BACKEND_ETCD_ETCD_CERT_FILE", ""),
 				Description: "File location certfile",
 			},
-			"backend_etcd_cacertfile": &schema.Schema{
+			"etcd_ca_cert_file": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_BACKEND_ETCD_ETCD_CA_CERT_FILE", ""),
 				Description: "File location cacert",
 			},
-			"backend_k8s_configfile": &schema.Schema{
+			"kubeconfig": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_KUBECONFIG", ""),
 				Description: "K8sKubeconfigFile`",
 			},
-			"backend_k8s_server": &schema.Schema{
+			"k8s_api_endpoint": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_K8S_API_ENDPOINT", ""),
 				Description: "K8sServer",
 			},
-			"backend_k8s_clientcert": &schema.Schema{
+			"k8s_cert_file": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_K8S_CERT_FILE", ""),
 				Description: "K8sClientCertificate",
 			},
-			"backend_k8s_clientkey": &schema.Schema{
+			"k8s_key_file": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_K8S_KEY_FILE", ""),
 				Description: "K8sClientKey",
 			},
-			"backend_k8s_ca": &schema.Schema{
+			"k8s_ca_file": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_K8S_CA_FILE", ""),
 				Description: "K8sCertificateAuthority",
 			},
-			"backend_k8s_token": &schema.Schema{
+			"k8s_token": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
+				DefaultFunc: schema.EnvDefaultFunc("CALICO_K8S_TOKEN", ""),
 				Description: "K8sToken",
 			},
 		},
@@ -123,31 +118,27 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	calicoConfig := api.CalicoAPIConfig{}
 
-	backendType := d.Get("backend_type").(string)
+	datastoreType := d.Get("datastore_type").(string)
 
-	switch backendType {
+	switch datastoreType {
 	case "etcdv2":
-		calicoConfig.Spec.DatastoreType = api.DatastoreType(backendType)
+		calicoConfig.Spec.DatastoreType = api.DatastoreType(datastoreType)
 
-		calicoConfig.Spec.EtcdScheme = d.Get("backend_etcd_scheme").(string)
-		calicoConfig.Spec.EtcdAuthority = d.Get("backend_etcd_authority").(string)
-		calicoConfig.Spec.EtcdEndpoints = d.Get("backend_etcd_endpoints").(string)
-		calicoConfig.Spec.EtcdUsername = d.Get("backend_etcd_username").(string)
-		calicoConfig.Spec.EtcdPassword = d.Get("backend_etcd_password").(string)
-		calicoConfig.Spec.EtcdKeyFile = d.Get("backend_etcd_keyfile").(string)
-		calicoConfig.Spec.EtcdCertFile = d.Get("backend_etcd_certfile").(string)
-		calicoConfig.Spec.EtcdCACertFile = d.Get("backend_etcd_cacertfile").(string)
+		calicoConfig.Spec.EtcdEndpoints = d.Get("etcd_endpoints").(string)
+		calicoConfig.Spec.EtcdUsername = d.Get("etcd_username").(string)
+		calicoConfig.Spec.EtcdPassword = d.Get("etcd_password").(string)
+		calicoConfig.Spec.EtcdKeyFile = d.Get("etcd_key_file").(string)
+		calicoConfig.Spec.EtcdCertFile = d.Get("etcd_cert_file").(string)
+		calicoConfig.Spec.EtcdCACertFile = d.Get("etcd_ca_cert_file").(string)
 	case "kubernetes":
-		calicoConfig.Spec.DatastoreType = api.DatastoreType(backendType)
+		calicoConfig.Spec.DatastoreType = api.DatastoreType(datastoreType)
 
-		calicoConfig.Spec.K8sKubeconfigFile = d.Get("backend_k8s_configfile").(string)
-		calicoConfig.Spec.K8sServer = d.Get("backend_k8s_server").(string)
-		calicoConfig.Spec.K8sClientCertificate = d.Get("backend_k8s_clientcert").(string)
-		calicoConfig.Spec.K8sClientKey = d.Get("backend_k8s_clientkey").(string)
-		calicoConfig.Spec.K8sCertificateAuthority = d.Get("backend_k8s_ca").(string)
-		calicoConfig.Spec.K8sToken = d.Get("backend_k8s_token").(string)
-	default:
-		return nil, fmt.Errorf("backend_type etcdv2 is the only supported backend at the moment")
+		calicoConfig.Spec.Kubeconfig = d.Get("kubeconfig").(string)
+		calicoConfig.Spec.K8sAPIEndpoint = d.Get("k8s_api_endpoint").(string)
+		calicoConfig.Spec.K8sCertFile = d.Get("k8s_cert_file").(string)
+		calicoConfig.Spec.K8sKeyFile = d.Get("k8s_key_file").(string)
+		calicoConfig.Spec.K8sCAFile = d.Get("k8s_ca_file").(string)
+		calicoConfig.Spec.K8sAPIToken = d.Get("k8s_token").(string)
 	}
 
 	calicoClient, err := client.New(calicoConfig)

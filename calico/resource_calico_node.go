@@ -34,15 +34,15 @@ func resourceCalicoNode() *schema.Resource {
 							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"asNumber": &schema.Schema{
+									"as_number": &schema.Schema{
 										Type:     schema.TypeString,
 										Optional: true,
 									},
-									"ipv4Address": &schema.Schema{
+									"ipv4_address": &schema.Schema{
 										Type:     schema.TypeString,
 										Optional: true,
 									},
-									"ipv6Address": &schema.Schema{
+									"ipv6_address": &schema.Schema{
 										Type:     schema.TypeString,
 										Optional: true,
 									},
@@ -68,7 +68,7 @@ func dToNodeSpec(d *schema.ResourceData) (api.NodeSpec, error) {
 	spec := api.NodeSpec{}
 	bgpSpec := api.NodeBGPSpec{}
 
-	asNumber := d.Get("spec.0.bgp.0.asNumber").(string)
+	asNumber := d.Get("spec.0.bgp.0.as_number").(string)
 
 	num, err := numorstring.ASNumberFromString(asNumber)
 	if err != nil {
@@ -76,13 +76,13 @@ func dToNodeSpec(d *schema.ResourceData) (api.NodeSpec, error) {
 	}
 	bgpSpec.ASNumber = &num
 
-	ip := d.Get("spec.0.bgp.0.ipv4Address").(string)
+	ip := d.Get("spec.0.bgp.0.ipv4_address").(string)
 	ipV4 := caliconet.IP{net.ParseIP(ip)}
-	bgpSpec.IPv4Address = &ipV4
+	bgpSpec.IPv4Address = ipV4.Network()
 
-	ip = d.Get("spec.0.bgp.0.ipv6Address").(string)
+	ip = d.Get("spec.0.bgp.0.ipv6_address").(string)
 	ipV6 := caliconet.IP{net.ParseIP(ip)}
-	bgpSpec.IPv6Address = &ipV6
+	bgpSpec.IPv6Address = ipV6.Network()
 	spec.BGP = &bgpSpec
 
 	return spec, nil
@@ -98,9 +98,9 @@ func setSchemaFieldsForNodeSpec(node *api.Node, d *schema.ResourceData) {
 
 	bgpMap := make(map[string]interface{})
 
-	bgpMap["asNumber"] = node.Spec.BGP.ASNumber
-	bgpMap["ipv4Address"] = node.Spec.BGP.IPv4Address
-	bgpMap["ipv6Address"] = node.Spec.BGP.IPv6Address
+	bgpMap["as_number"] = node.Spec.BGP.ASNumber
+	bgpMap["ipv4_address"] = node.Spec.BGP.IPv4Address
+	bgpMap["ipv6_address"] = node.Spec.BGP.IPv6Address
 	bgpMapArray[0] = bgpMap
 
 	specMap["bgp"] = bgpMapArray

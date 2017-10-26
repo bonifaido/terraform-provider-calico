@@ -38,7 +38,7 @@ func resourceCalicoIpPool() *schema.Resource {
 								},
 							},
 						},
-						"nat-outgoing": &schema.Schema{
+						"nat_outgoing": &schema.Schema{
 							Type:     schema.TypeBool,
 							Optional: true,
 						},
@@ -74,7 +74,7 @@ func dToIpPoolSpec(d *schema.ResourceData) (api.IPPoolSpec, error) {
 	}
 	spec.IPIP = &ipip
 
-	natOutgoing := d.Get("spec.0.nat-outgoing").(bool)
+	natOutgoing := d.Get("spec.0.nat_outgoing").(bool)
 	spec.NATOutgoing = natOutgoing
 
 	disabled := d.Get("spec.0.disabled").(bool)
@@ -89,7 +89,7 @@ func setSchemaFieldsForIPPoolSpec(ippool *api.IPPool, d *schema.ResourceData) {
 
 	specMap := make(map[string]interface{})
 
-	specMap["nat-outgoing"] = ippool.Spec.NATOutgoing
+	specMap["nat_outgoing"] = ippool.Spec.NATOutgoing
 	specMap["disabled"] = ippool.Spec.Disabled
 
 	ipipMapArray := make([]interface{}, 1)

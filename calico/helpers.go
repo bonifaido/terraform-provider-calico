@@ -28,10 +28,10 @@ func getEntityRuleMap(entityRule api.EntityRule) map[string]interface{} {
 		resourceSourceMap["ports"] = portsArray
 	}
 	if entityRule.NotNet != nil {
-		resourceSourceMap["notNet"] = entityRule.NotNet.String()
+		resourceSourceMap["not_net"] = entityRule.NotNet.String()
 	}
 	if len(entityRule.NotSelector) > 0 {
-		resourceSourceMap["notSelector"] = entityRule.NotSelector
+		resourceSourceMap["not_selector"] = entityRule.NotSelector
 	}
 	if len(entityRule.NotPorts) > 0 {
 		notPortsArray := make([]string, len(entityRule.NotPorts))
@@ -39,7 +39,7 @@ func getEntityRuleMap(entityRule api.EntityRule) map[string]interface{} {
 			val := v.String()
 			notPortsArray[i] = val
 		}
-		resourceSourceMap["notPorts"] = notPortsArray
+		resourceSourceMap["not_ports"] = notPortsArray
 	}
 	return resourceSourceMap
 }
@@ -57,7 +57,7 @@ func resourceMapToRule(mapStruct map[string]interface{}) (api.Rule, error) {
 			rule.Protocol = &protocol
 		}
 	}
-	if val, ok := mapStruct["notProtocol"]; ok {
+	if val, ok := mapStruct["not_protocol"]; ok {
 		if len(val.(string)) > 0 {
 			notProtocol := numorstring.ProtocolFromString(val.(string))
 			rule.NotProtocol = &notProtocol
@@ -78,7 +78,7 @@ func resourceMapToRule(mapStruct map[string]interface{}) (api.Rule, error) {
 			}
 		}
 	}
-	if val, ok := mapStruct["notICMP"]; ok {
+	if val, ok := mapStruct["not_icmp"]; ok {
 		icmpList := val.([]interface{})
 		if len(icmpList) > 0 {
 			for _, v := range icmpList {
@@ -137,7 +137,7 @@ func srcDstListToEntityRule(srcDstList []interface{}) (api.EntityRule, error) {
 	if v, ok := resourceRuleMap["selector"]; ok {
 		entityRule.Selector = v.(string)
 	}
-	if v, ok := resourceRuleMap["notSelector"]; ok {
+	if v, ok := resourceRuleMap["not_selector"]; ok {
 		entityRule.NotSelector = v.(string)
 	}
 	if v, ok := resourceRuleMap["ports"]; ok {
@@ -149,7 +149,7 @@ func srcDstListToEntityRule(srcDstList []interface{}) (api.EntityRule, error) {
 			entityRule.Ports = portList
 		}
 	}
-	if v, ok := resourceRuleMap["notPorts"]; ok {
+	if v, ok := resourceRuleMap["not_ports"]; ok {
 		if resourcePortList, ok := v.([]interface{}); ok {
 			portList, err := toPortList(resourcePortList)
 			if err != nil {
@@ -237,7 +237,7 @@ func rulesToMap(calicoRules []api.Rule) []map[string]interface{} {
 			resourceIcmpMap["type"] = *rule.ICMP.Type
 
 			resourceIcmpArray[0] = resourceIcmpMap
-			resourceRule["notICMP"] = resourceIcmpArray
+			resourceRule["not_icmp"] = resourceIcmpArray
 		}
 		if nonEmptyEntityRule(&rule.Source) {
 			resourceSourceArray := make([]map[string]interface{}, 1)
@@ -273,7 +273,7 @@ func entityRuleSchema() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"notNet": &schema.Schema{
+			"not_net": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -281,7 +281,7 @@ func entityRuleSchema() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"notSelector": &schema.Schema{
+			"not_selector": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -292,7 +292,7 @@ func entityRuleSchema() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-			"notPorts": &schema.Schema{
+			"not_ports": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -320,7 +320,7 @@ func ruleSchema() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"notProtocol": &schema.Schema{
+						"not_protocol": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
@@ -340,7 +340,7 @@ func ruleSchema() *schema.Resource {
 								},
 							},
 						},
-						"notICMP": &schema.Schema{
+						"not_icmp": &schema.Schema{
 							Type:     schema.TypeList,
 							Optional: true,
 							Elem: &schema.Resource{
