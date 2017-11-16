@@ -35,6 +35,10 @@ func resourceCalicoPolicy() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+						"preDNAT": &schema.Schema{
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
 						"ingress": &schema.Schema{
 							Type:     schema.TypeList,
 							Optional: true,
@@ -155,6 +159,7 @@ func setSchemaFieldsForPolicySpec(policy *api.Policy, d *schema.ResourceData) {
 
 	specMap["order"] = policy.Spec.Order
 	specMap["selector"] = policy.Spec.Selector
+	specMap["preDNAT"] = policy.Spec.PreDNAT
 
 	ingressRuleMapArray := make([]interface{}, 1)
 	if policy.Spec.IngressRules != nil && len(policy.Spec.IngressRules) > 0 {
@@ -196,6 +201,8 @@ func dToPolicySpec(d *schema.ResourceData) (api.PolicySpec, error) {
 	spec.Order = &order
 
 	spec.Selector = d.Get("spec.0.selector").(string)
+
+	spec.PreDNAT = d.Get("spec.0.preDNAT").(bool)
 
 	if v, ok := d.GetOk("spec.0.ingress.0.rule.#"); ok {
 		ingressRules := make([]api.Rule, v.(int))
